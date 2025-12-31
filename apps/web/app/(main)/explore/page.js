@@ -1,11 +1,13 @@
 "use client";
 
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
 import Image from "next/image";
 
-export default function ExplorePage() {
+/* ================= INNER COMPONENT ================= */
+function ExploreContent() {
   const params = useSearchParams();
+
   const zone = params.get("location");
   const category = params.get("category") || "General";
   const adults = Number(params.get("adults") || 1);
@@ -30,7 +32,6 @@ export default function ExplorePage() {
     load();
   }, [zone, API_BASE]);
 
-  /** Helper to get category labels */
   function getCategories(rooms = {}) {
     const labels = [];
     if (rooms.vvip > 0) labels.push("VVIP");
@@ -55,7 +56,6 @@ export default function ExplorePage() {
                 key={prop._id}
                 className="border rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition"
               >
-                {/* Image */}
                 <div className="relative w-full h-56">
                   <Image
                     src={`http://localhost:5001${prop.images?.[0]}`}
@@ -66,27 +66,23 @@ export default function ExplorePage() {
                   />
                 </div>
 
-                {/* Content */}
                 <div className="p-6">
                   <h3 className="text-xl font-semibold text-[#10375C]">
                     {prop.name}
                   </h3>
 
-                  {/* Address */}
                   {prop.location && (
                     <p className="mt-1 text-sm text-gray-600">
                       📍 {prop.location}
                     </p>
                   )}
 
-                  {/* Categories */}
                   {categories.length > 0 && (
                     <div className="mt-3 flex flex-wrap gap-2">
                       {categories.map((cat) => (
                         <span
                           key={cat}
-                          className="px-3 py-1 text-xs font-semibold rounded-full
-                                     bg-[#FFF3EF] text-[#FF5722]"
+                          className="px-3 py-1 text-xs font-semibold rounded-full bg-[#FFF3EF] text-[#FF5722]"
                         >
                           {cat}
                         </span>
@@ -94,7 +90,6 @@ export default function ExplorePage() {
                     </div>
                   )}
 
-                  {/* CTA */}
                   <div className="mt-6">
                     <button
                       onClick={async () => {
@@ -106,10 +101,6 @@ export default function ExplorePage() {
                           checkIn,
                           checkOut,
                         };
-
-                        const API_BASE =
-                          process.env.NEXT_PUBLIC_API_URL ||
-                          "http://localhost:5001";
 
                         const res = await fetch(`${API_BASE}/api/bookings`, {
                           method: "POST",
@@ -126,7 +117,7 @@ export default function ExplorePage() {
                           alert(data.error || "Booking failed");
                         }
                       }}
-                      className="w-full rounded-xl px-6 py-3 bg-[#FF5722] text-white font-semibold cursor-pointer hover:bg-[#e64b1f] transition"
+                      className="w-full rounded-xl px-6 py-3 bg-[#FF5722] text-white font-semibold hover:bg-[#e64b1f] transition"
                     >
                       Request For Booking
                     </button>
@@ -144,5 +135,14 @@ export default function ExplorePage() {
         </div>
       </div>
     </div>
+  );
+}
+
+/* ================= PAGE EXPORT ================= */
+export default function ExplorePage() {
+  return (
+    <Suspense fallback={<div className="text-center py-20">Loading...</div>}>
+      <ExploreContent />
+    </Suspense>
   );
 }
