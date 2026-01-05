@@ -86,8 +86,8 @@ export default function LoginPage() {
 
     setLoading(true);
     try {
-      const API_BASE =
-        process.env.NEXT_PUBLIC_API_BASE || "http://localhost:5001";
+      // const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:5001";
+      const API_BASE = process.env.NEXT_PUBLIC_API_URL;
 
       const res = await fetch(`${API_BASE}/api/admin-auth/login`, {
         method: "POST",
