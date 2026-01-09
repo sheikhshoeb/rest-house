@@ -13,7 +13,7 @@ import Benefits from "../../../components/Benefits";
 import CTABookNow from "../../../components/CTABookNow";
 
 export default async function DashboardPage() {
-  const apiBase = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:5001";
+  const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
 
   // 1) Read cookies on the server
   const cookieStore = await cookies();

@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 export default function useAdminAuth({ redirectTo = "/login" } = {}) {
   const router = useRouter();
   const [status, setStatus] = useState("checking"); // 'checking' | 'authed' | 'unauth'
-  // const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:5001";
+  // const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
   const API_BASE = process.env.NEXT_PUBLIC_API_URL;
 
   useEffect(() => {

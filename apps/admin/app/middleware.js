@@ -1,7 +1,7 @@
 // apps/admin/middleware.js
 import { NextResponse } from "next/server";
 
-// const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:5001";
+// const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
 const API_BASE = process.env.NEXT_PUBLIC_API_URL;
 
 async function isAuthenticated(req) {

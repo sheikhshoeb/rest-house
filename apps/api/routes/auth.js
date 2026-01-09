@@ -192,14 +192,16 @@ router.post("/login", async (req, res) => {
 
     const token = jwt.sign(payload, JWT_SECRET, { expiresIn: "7d" });
 
+    // ✅ FIXED COOKIE (same as admin)
     res.cookie(COOKIE_NAME, token, {
       httpOnly: true,
-      sameSite: "lax",
+      secure: true, // REQUIRED on HTTPS
+      sameSite: "None", // REQUIRED for cross-domain
       maxAge: 7 * 24 * 60 * 60 * 1000,
       path: "/",
     });
 
-    return res.json({ token });
+    return res.json({ message: "Logged in" });
   } catch (err) {
     console.error("LOGIN ERROR:", err);
     return res.status(500).json({ error: "Server error" });
@@ -246,8 +248,11 @@ router.get("/me", authMiddleware, async (req, res) => {
    LOGOUT
 ======================= */
 router.post("/logout", (req, res) => {
-  res.clearCookie(COOKIE_NAME, { path: "/" });
+  res.clearCookie(COOKIE_NAME, {
+    path: "/",
+    sameSite: "None",
+    secure: true,
+  });
+
   res.json({ message: "Logged out" });
 });
-
-module.exports = router;

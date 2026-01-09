@@ -13,7 +13,7 @@ export default function Header({ title = "Admin Portal" }) {
   const [open, setOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false); // ✅ NEW
 
-  const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:5001";
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
 
   useEffect(() => {
     async function fetchAdmin() {

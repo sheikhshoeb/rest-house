@@ -30,7 +30,7 @@ export default function RegisterPage() {
 
   const [employmentStatus, setEmploymentStatus] = useState("employee");
 
-  const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:5001";
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
 
   // ---- 0) CLIENT SESSION CHECK: redirect to /home if logged in
   useEffect(() => {

@@ -22,7 +22,7 @@ const COMBINED_MENU = [...LEFT_MENU, ...RIGHT_MENU];
 
 export default function Header() {
   const router = useRouter();
-  const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:5001";
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
   const pathname = usePathname() || "/";
   const [mobileOpen, setMobileOpen] = useState(false);
 
