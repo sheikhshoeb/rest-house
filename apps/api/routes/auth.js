@@ -166,7 +166,7 @@ router.post("/login", async (req, res) => {
       return res
         .status(400)
         .json({ error: "Provide email/employeeId and password" });
-    }git add apps/api/server.js apps/api/routes/auth.js
+    }
 
     const query = employeeId
       ? { employeeId: employeeId.trim() }
