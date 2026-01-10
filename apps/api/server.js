@@ -70,16 +70,25 @@ if (process.env.NODE_ENV !== "production") {
    - /api/admin-auth -> admin auth (register/login/me/logout)
    - /api/admin      -> admin-only actions (approve/reject etc) — protected by middleware
 ---------------------------- */
-const authRoutes = require("./routes/auth"); // user auth
-const adminAuthRoutes = require("./routes/adminAuth"); // admin auth (separate)
-const adminRoutes = require("./routes/admin"); // admin actions
-const adminEmployeeIdRoutes = require("./routes/adminEmployeeIds");
-const adminRestHouseRoutes = require("./routes/adminRestHouses");
-const adminPricingRoutes = require("./routes/adminPricing");
-const zoneRoutes = require("./routes/zones");
-const propertyRoutes = require("./routes/properties");
-const bookingRoutes = require("./routes/bookings");
-const adminBookingRoutes = require("./routes/adminBookings");
+const authRoutes = require(path.join(__dirname, "routes/auth"));
+const adminAuthRoutes = require(path.join(__dirname, "routes/adminAuth"));
+const adminRoutes = require(path.join(__dirname, "routes/admin"));
+const adminEmployeeIdRoutes = require(path.join(
+  __dirname,
+  "routes/adminEmployeeIds"
+));
+const adminRestHouseRoutes = require(path.join(
+  __dirname,
+  "routes/adminRestHouses"
+));
+const adminPricingRoutes = require(path.join(__dirname, "routes/adminPricing"));
+const zoneRoutes = require(path.join(__dirname, "routes/zones"));
+const propertyRoutes = require(path.join(__dirname, "routes/properties"));
+const bookingRoutes = require(path.join(__dirname, "routes/bookings"));
+const adminBookingRoutes = require(path.join(
+  __dirname,
+  "routes/adminBookings"
+));
 
 app.use("/api/auth", authRoutes);
 app.use("/api/admin-auth", adminAuthRoutes);
