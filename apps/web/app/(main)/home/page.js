@@ -1,4 +1,3 @@
-// apps/web/app/(main)/home/page.js
 import AuthGuard from "../../../components/AuthGuard";
 
 import HeroSection from "../../../components/HeroSection";

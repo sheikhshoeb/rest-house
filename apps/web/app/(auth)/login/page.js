@@ -1,4 +1,3 @@
-// apps/web/app/(auth)/login/page.js
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -14,42 +13,31 @@ export default function LoginPage() {
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [checkingSession, setCheckingSession] = useState(true);
   const [error, setError] = useState(null);
 
   const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
 
-  // 1) CHECK IF USER IS ALREADY LOGGED IN
+  /* -------------------------------------------------
+     1) If already logged in → redirect to /home
+     (NON-BLOCKING, no loader, no flicker)
+  -------------------------------------------------- */
   useEffect(() => {
-    let mounted = true;
-
     async function checkSession() {
       try {
         const res = await fetch(`${API_BASE}/api/auth/me`, {
-          method: "GET",
           credentials: "include",
           cache: "no-store",
         });
 
-        if (!mounted) return;
-
         if (res.ok) {
-          // already authenticated -> redirect to /home
           router.replace("/home");
-        } else {
-          setCheckingSession(false);
         }
-      } catch (err) {
-        // network error -> show login UI
-        console.warn("Client session check error (login):", err);
-        if (mounted) setCheckingSession(false);
+      } catch {
+        // ignore silently
       }
     }
 
     checkSession();
-    return () => {
-      mounted = false;
-    };
   }, [API_BASE, router]);
 
   // helper
@@ -57,6 +45,9 @@ export default function LoginPage() {
     return /\S+@\S+\.\S+/.test(value);
   }
 
+  /* -------------------------------------------------
+     2) Login submit
+  -------------------------------------------------- */
   async function submit(e) {
     e.preventDefault();
     setLoading(true);
@@ -64,8 +55,12 @@ export default function LoginPage() {
 
     try {
       const payload = { password };
-      if (looksLikeEmail(identifier)) payload.email = identifier.trim();
-      else payload.employeeId = identifier.trim();
+
+      if (looksLikeEmail(identifier)) {
+        payload.email = identifier.trim();
+      } else {
+        payload.employeeId = identifier.trim();
+      }
 
       const res = await fetch(`${API_BASE}/api/auth/login`, {
         method: "POST",
@@ -75,28 +70,23 @@ export default function LoginPage() {
       });
 
       const data = await res.json().catch(() => ({}));
-      if (!res.ok)
-        throw new Error(data?.error ?? `Login failed (${res.status})`);
 
-      // success -> redirect to home (server sets HttpOnly cookie)
+      if (!res.ok) {
+        throw new Error(data?.error ?? "Login failed");
+      }
+
+      // Cookie is set by backend → redirect
       router.replace("/home");
     } catch (err) {
-      setError(err?.message ?? String(err));
+      setError(err?.message ?? "Login failed");
     } finally {
       setLoading(false);
     }
   }
 
-  if (checkingSession) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="mb-3 animate-pulse">Checking session…</div>
-        </div>
-      </div>
-    );
-  }
-
+  /* -------------------------------------------------
+     3) UI (UNCHANGED)
+  -------------------------------------------------- */
   return (
     <div className="min-h-screen bg-white font-[Poppins] flex flex-col items-center">
       <header className="pt-12">
@@ -141,6 +131,7 @@ export default function LoginPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   type={show ? "text" : "password"}
                   placeholder="Enter your password"
+                  autoComplete="current-password"
                   className={`w-full h-12 rounded-xl px-4 pr-14 focus:outline-none
                     focus:border-[#FF5722] focus:ring-2 focus:ring-[#FF5722]/40
                     border border-transparent transition-all 

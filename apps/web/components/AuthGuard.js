@@ -9,10 +9,13 @@ export default function AuthGuard({ children }) {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
+    let active = true;
+
     async function checkSession() {
       try {
         const res = await fetch(`${API_BASE}/api/auth/me`, {
           credentials: "include",
+          cache: "no-store",
         });
 
         if (!res.ok) {
@@ -20,14 +23,17 @@ export default function AuthGuard({ children }) {
           return;
         }
 
-        setReady(true);
-      } catch (err) {
+        if (active) setReady(true);
+      } catch {
         router.replace("/login");
       }
     }
 
     checkSession();
-  }, [router, API_BASE]);
+    return () => {
+      active = false;
+    };
+  }, [API_BASE, router]);
 
   if (!ready) {
     return (
