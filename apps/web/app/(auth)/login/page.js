@@ -21,24 +21,6 @@ export default function LoginPage() {
      1) If already logged in → redirect to /home
      (NON-BLOCKING, no loader, no flicker)
   -------------------------------------------------- */
-  useEffect(() => {
-    async function checkSession() {
-      try {
-        const res = await fetch(`${API_BASE}/api/auth/me`, {
-          credentials: "include",
-          cache: "no-store",
-        });
-
-        if (res.ok) {
-          router.replace("/home");
-        }
-      } catch {
-        // ignore silently
-      }
-    }
-
-    checkSession();
-  }, [API_BASE, router]);
 
   // helper
   function looksLikeEmail(value) {

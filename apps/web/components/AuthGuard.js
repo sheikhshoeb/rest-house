@@ -9,9 +9,9 @@ export default function AuthGuard({ children }) {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    let active = true;
+    let alive = true;
 
-    async function checkSession() {
+    async function check() {
       try {
         const res = await fetch(`${API_BASE}/api/auth/me`, {
           credentials: "include",
@@ -23,15 +23,15 @@ export default function AuthGuard({ children }) {
           return;
         }
 
-        if (active) setReady(true);
+        if (alive) setReady(true);
       } catch {
         router.replace("/login");
       }
     }
 
-    checkSession();
+    check();
     return () => {
-      active = false;
+      alive = false;
     };
   }, [API_BASE, router]);
 
