@@ -6,15 +6,56 @@ const upload = require("../middleware/uploadPropertyImages");
 
 const router = express.Router();
 
+/**
+ * @swagger
+ * tags:
+ *   name: Admin Rest Houses
+ *   description: Admin management of zones and rest house properties
+ */
+
 /* ================= ZONES ================= */
 
-// GET all zones
+/**
+ * @swagger
+ * /api/admin/rest-houses/zones:
+ *   get:
+ *     summary: Get all zones
+ *     tags: [Admin Rest Houses]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of zones
+ */
 router.get("/zones", authMiddleware, requireRole("admin"), async (req, res) => {
   const zones = await Zone.find().sort({ createdAt: -1 });
   res.json(zones);
 });
 
-// ADD zone
+/**
+ * @swagger
+ * /api/admin/rest-houses/zones:
+ *   post:
+ *     summary: Add a new zone
+ *     tags: [Admin Rest Houses]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: Delhi
+ *     responses:
+ *       200:
+ *         description: Zone created
+ */
 router.post(
   "/zones",
   authMiddleware,
@@ -25,7 +66,35 @@ router.post(
   }
 );
 
-// UPDATE zone
+/**
+ * @swagger
+ * /api/admin/rest-houses/zones/{id}:
+ *   put:
+ *     summary: Update a zone
+ *     tags: [Admin Rest Houses]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *             properties:
+ *               name:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Zone updated
+ */
 router.put(
   "/zones/:id",
   authMiddleware,
@@ -40,7 +109,24 @@ router.put(
   }
 );
 
-// DELETE zone (also deletes properties under it)
+/**
+ * @swagger
+ * /api/admin/rest-houses/zones/{id}:
+ *   delete:
+ *     summary: Delete a zone (and its properties)
+ *     tags: [Admin Rest Houses]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Zone and properties deleted
+ */
 router.delete(
   "/zones/:id",
   authMiddleware,
@@ -54,7 +140,18 @@ router.delete(
 
 /* ================= PROPERTIES ================= */
 
-// GET all properties
+/**
+ * @swagger
+ * /api/admin/rest-houses/properties:
+ *   get:
+ *     summary: Get all properties
+ *     tags: [Admin Rest Houses]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of properties
+ */
 router.get(
   "/properties",
   authMiddleware,
@@ -65,7 +162,54 @@ router.get(
   }
 );
 
-// ADD property (WITH IMAGE UPLOAD)
+/**
+ * @swagger
+ * /api/admin/rest-houses/properties:
+ *   post:
+ *     summary: Add a new property (with image upload)
+ *     tags: [Admin Rest Houses]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               location:
+ *                 type: string
+ *               zone:
+ *                 type: string
+ *               upiId:
+ *                 type: string
+ *               vvip:
+ *                 type: number
+ *               vip:
+ *                 type: number
+ *               general:
+ *                 type: number
+ *               officerName:
+ *                 type: string
+ *               officerDesignation:
+ *                 type: string
+ *               officerContact:
+ *                 type: string
+ *               caretakerName:
+ *                 type: string
+ *               caretakerContact:
+ *                 type: string
+ *               images:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                   format: binary
+ *     responses:
+ *       200:
+ *         description: Property created
+ */
 router.post(
   "/properties",
   authMiddleware,
@@ -82,24 +226,20 @@ router.post(
         location: req.body.location,
         zone: req.body.zone,
         upiId: req.body.upiId,
-
         rooms: {
           vvip: Number(req.body.vvip || 0),
           vip: Number(req.body.vip || 0),
           general: Number(req.body.general || 0),
         },
-
         officer: {
           name: req.body.officerName,
           designation: req.body.officerDesignation,
           contact: req.body.officerContact,
         },
-
         caretaker: {
           name: req.body.caretakerName,
           contact: req.body.caretakerContact,
         },
-
         images: imageUrls,
       });
 
@@ -111,7 +251,39 @@ router.post(
   }
 );
 
-// UPDATE property (without image replace)
+/**
+ * @swagger
+ * /api/admin/rest-houses/properties/{id}:
+ *   put:
+ *     summary: Update a property (append images)
+ *     tags: [Admin Rest Houses]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               existingImages:
+ *                 type: string
+ *                 description: JSON array of existing image URLs
+ *               images:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                   format: binary
+ *     responses:
+ *       200:
+ *         description: Property updated
+ */
 router.put(
   "/properties/:id",
   authMiddleware,
@@ -132,24 +304,20 @@ router.put(
           location: req.body.location,
           zone: req.body.zone,
           upiId: req.body.upiId,
-
           rooms: {
             vvip: Number(req.body.vvip || 0),
             vip: Number(req.body.vip || 0),
             general: Number(req.body.general || 0),
           },
-
           officer: {
             name: req.body.officerName,
             designation: req.body.officerDesignation,
             contact: req.body.officerContact,
           },
-
           caretaker: {
             name: req.body.caretakerName,
             contact: req.body.caretakerContact,
           },
-
           images: [...existingImages, ...newImageUrls],
         },
         { new: true }
@@ -163,7 +331,24 @@ router.put(
   }
 );
 
-// DELETE property
+/**
+ * @swagger
+ * /api/admin/rest-houses/properties/{id}:
+ *   delete:
+ *     summary: Delete a property
+ *     tags: [Admin Rest Houses]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Property deleted
+ */
 router.delete(
   "/properties/:id",
   authMiddleware,

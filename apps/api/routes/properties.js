@@ -5,7 +5,33 @@ const Zone = require("../models/Zone");
 const router = express.Router();
 
 /**
- * GET /api/properties?zone=Delhi
+ * @swagger
+ * tags:
+ *   name: Properties
+ *   description: Property listing APIs
+ */
+
+/**
+ * @swagger
+ * /api/properties:
+ *   get:
+ *     summary: Get properties by zone
+ *     tags: [Properties]
+ *     parameters:
+ *       - in: query
+ *         name: zone
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: Delhi
+ *         description: Zone name to filter properties
+ *     responses:
+ *       200:
+ *         description: List of properties for the given zone
+ *       400:
+ *         description: Zone is required
+ *       500:
+ *         description: Failed to fetch properties
  */
 router.get("/", async (req, res) => {
   try {

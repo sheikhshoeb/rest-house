@@ -9,7 +9,64 @@ const User = require("../models/User");
 const router = express.Router();
 
 /**
- * POST /api/bookings
+ * @swagger
+ * tags:
+ *   name: Bookings
+ *   description: Booking creation, listing and payment actions
+ */
+
+/* =======================
+   CREATE BOOKING
+======================= */
+/**
+ * @swagger
+ * /api/bookings:
+ *   post:
+ *     summary: Create a new booking
+ *     tags: [Bookings]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - propertyId
+ *               - category
+ *               - adults
+ *               - children
+ *               - checkIn
+ *               - checkOut
+ *             properties:
+ *               propertyId:
+ *                 type: string
+ *                 example: 64f2c9b1a3e9a12345678901
+ *               category:
+ *                 type: string
+ *                 example: AC
+ *               adults:
+ *                 type: number
+ *                 example: 2
+ *               children:
+ *                 type: number
+ *                 example: 1
+ *               checkIn:
+ *                 type: string
+ *                 format: date
+ *                 example: 2026-02-01
+ *               checkOut:
+ *                 type: string
+ *                 format: date
+ *                 example: 2026-02-03
+ *     responses:
+ *       200:
+ *         description: Booking created successfully
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Property not found
  */
 router.post("/", authMiddleware, async (req, res) => {
   try {
@@ -49,7 +106,6 @@ router.post("/", authMiddleware, async (req, res) => {
         phone: user.phone,
         email: user.email,
       },
-
       property: {
         id: property._id,
         name: property.name,
@@ -58,7 +114,6 @@ router.post("/", authMiddleware, async (req, res) => {
         officer: property.officer,
         caretaker: property.caretaker,
       },
-
       bookingDetails: {
         category,
         adults,
@@ -68,7 +123,6 @@ router.post("/", authMiddleware, async (req, res) => {
         checkOut,
         days: priceResult.days,
       },
-
       pricing: {
         baseAmount: priceResult.baseAmount,
         gst: priceResult.gst,
@@ -86,9 +140,22 @@ router.post("/", authMiddleware, async (req, res) => {
   }
 });
 
+/* =======================
+   MY BOOKINGS
+======================= */
 /**
- * GET /api/bookings/my
- * Fetch bookings for logged-in user
+ * @swagger
+ * /api/bookings/my:
+ *   get:
+ *     summary: Get bookings of logged-in user
+ *     tags: [Bookings]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of user bookings
+ *       401:
+ *         description: Unauthorized
  */
 router.get("/my", authMiddleware, async (req, res) => {
   try {
@@ -98,10 +165,8 @@ router.get("/my", authMiddleware, async (req, res) => {
       .sort({ createdAt: -1 })
       .lean();
 
-    // Collect propertyIds
     const propertyIds = bookings.map((b) => b.property?.id).filter(Boolean);
 
-    // Fetch properties in one query
     const properties = await Property.find({
       _id: { $in: propertyIds },
     }).lean();
@@ -111,10 +176,8 @@ router.get("/my", authMiddleware, async (req, res) => {
       propertyMap[p._id.toString()] = p;
     });
 
-    // Attach latest property data
     const enrichedBookings = bookings.map((b) => {
       const prop = propertyMap[b.property?.id?.toString()];
-
       return {
         ...b,
         property: {
@@ -132,22 +195,40 @@ router.get("/my", authMiddleware, async (req, res) => {
   }
 });
 
+/* =======================
+   PAY AT REST HOUSE
+======================= */
 /**
- * PATCH /api/bookings/:id/pay-at-rest-house
- * Mark booking as "pay on rest house"
+ * @swagger
+ * /api/bookings/{id}/pay-at-rest-house:
+ *   patch:
+ *     summary: Mark booking as pay at rest house
+ *     tags: [Bookings]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Payment status updated
+ *       404:
+ *         description: Booking not found
  */
 router.patch("/:id/pay-at-rest-house", authMiddleware, async (req, res) => {
   try {
     const booking = await Booking.findOne({
       _id: req.params.id,
-      "user.id": req.user.id, // security check
+      "user.id": req.user.id,
     });
 
     if (!booking) {
       return res.status(404).json({ error: "Booking not found" });
     }
 
-    // Optional safety: allow only if approved
     if (booking.status !== "approved") {
       return res.status(400).json({
         error: "Booking must be approved before payment",

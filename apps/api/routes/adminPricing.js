@@ -5,13 +5,33 @@ const { authMiddleware, requireRole } = require("../middleware/auth");
 const router = express.Router();
 
 /**
- * GET pricing
+ * @swagger
+ * tags:
+ *   name: Admin Pricing
+ *   description: Admin pricing configuration APIs
+ */
+
+/* =======================
+   GET PRICING
+======================= */
+/**
+ * @swagger
+ * /api/admin/pricing:
+ *   get:
+ *     summary: Get current pricing configuration
+ *     tags: [Admin Pricing]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Pricing configuration
+ *       500:
+ *         description: Failed to fetch pricing
  */
 router.get("/", authMiddleware, requireRole("admin"), async (req, res) => {
   try {
     let pricing = await Pricing.findOne();
 
-    // Create default row if missing
     if (!pricing) {
       pricing = await Pricing.create({
         employee: 100,
@@ -26,8 +46,44 @@ router.get("/", authMiddleware, requireRole("admin"), async (req, res) => {
   }
 });
 
+/* =======================
+   UPDATE PRICING
+======================= */
 /**
- * UPDATE pricing
+ * @swagger
+ * /api/admin/pricing:
+ *   put:
+ *     summary: Update pricing configuration
+ *     tags: [Admin Pricing]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - employee
+ *               - exEmployee
+ *               - guest
+ *             properties:
+ *               employee:
+ *                 type: number
+ *                 example: 100
+ *               exEmployee:
+ *                 type: number
+ *                 example: 500
+ *               guest:
+ *                 type: number
+ *                 example: 1000
+ *     responses:
+ *       200:
+ *         description: Pricing updated successfully
+ *       400:
+ *         description: Invalid price value
+ *       500:
+ *         description: Failed to update pricing
  */
 router.put("/", authMiddleware, requireRole("admin"), async (req, res) => {
   try {

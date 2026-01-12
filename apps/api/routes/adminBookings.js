@@ -8,7 +8,28 @@ const { authMiddleware, requireRole } = require("../middleware/auth");
 const router = express.Router();
 
 /**
- * GET /api/admin/bookings
+ * @swagger
+ * tags:
+ *   name: Admin Bookings
+ *   description: Admin booking management APIs
+ */
+
+/* =======================
+   GET ALL BOOKINGS
+======================= */
+/**
+ * @swagger
+ * /api/admin/bookings:
+ *   get:
+ *     summary: Get all bookings
+ *     tags: [Admin Bookings]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of all bookings
+ *       500:
+ *         description: Failed to fetch bookings
  */
 router.get("/", authMiddleware, requireRole("admin"), async (req, res) => {
   try {
@@ -20,8 +41,28 @@ router.get("/", authMiddleware, requireRole("admin"), async (req, res) => {
   }
 });
 
+/* =======================
+   APPROVE BOOKING
+======================= */
 /**
- * PATCH /api/admin/bookings/:id/approve
+ * @swagger
+ * /api/admin/bookings/{id}/approve:
+ *   patch:
+ *     summary: Approve a booking
+ *     tags: [Admin Bookings]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Booking approved
+ *       500:
+ *         description: Failed to approve booking
  */
 router.patch(
   "/:id/approve",
@@ -38,8 +79,28 @@ router.patch(
   }
 );
 
+/* =======================
+   REJECT BOOKING
+======================= */
 /**
- * PATCH /api/admin/bookings/:id/reject
+ * @swagger
+ * /api/admin/bookings/{id}/reject:
+ *   patch:
+ *     summary: Reject a booking
+ *     tags: [Admin Bookings]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Booking rejected
+ *       500:
+ *         description: Failed to reject booking
  */
 router.patch(
   "/:id/reject",
@@ -56,9 +117,66 @@ router.patch(
   }
 );
 
+/* =======================
+   ADMIN CREATE BOOKING
+======================= */
 /**
- * POST /api/admin/bookings/create
- * Admin-created booking (manual user)
+ * @swagger
+ * /api/admin/bookings/create:
+ *   post:
+ *     summary: Create a booking manually (admin)
+ *     tags: [Admin Bookings]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - role
+ *               - name
+ *               - phone
+ *               - propertyId
+ *               - checkIn
+ *               - checkOut
+ *             properties:
+ *               role:
+ *                 type: string
+ *                 example: employee
+ *               employeeId:
+ *                 type: string
+ *               name:
+ *                 type: string
+ *               phone:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *               propertyId:
+ *                 type: string
+ *               category:
+ *                 type: string
+ *               adults:
+ *                 type: number
+ *               children:
+ *                 type: number
+ *               checkIn:
+ *                 type: string
+ *                 format: date
+ *               checkOut:
+ *                 type: string
+ *                 format: date
+ *               paymentStatus:
+ *                 type: string
+ *                 example: pending
+ *     responses:
+ *       200:
+ *         description: Booking created successfully
+ *       400:
+ *         description: Missing required fields
+ *       500:
+ *         description: Failed to create booking
  */
 router.post(
   "/create",
@@ -81,24 +199,20 @@ router.post(
         paymentStatus,
       } = req.body;
 
-      // ---- Validate ----
       if (!role || !name || !phone || !propertyId || !checkIn || !checkOut) {
         return res.status(400).json({ error: "Missing required fields" });
       }
 
-      // ---- Fetch Property ----
       const property = await Property.findById(propertyId);
       if (!property) {
         return res.status(404).json({ error: "Property not found" });
       }
 
-      // ---- Fetch Pricing ----
       const pricing = await Pricing.findOne().sort({ createdAt: -1 });
       if (!pricing) {
         return res.status(500).json({ error: "Pricing not configured" });
       }
 
-      // ---- Calculate Pricing ----
       const priceResult = calculatePricing({
         checkIn,
         checkOut,
@@ -108,7 +222,6 @@ router.post(
         pricing,
       });
 
-      // ---- Create Booking ----
       const booking = await Booking.create({
         user: {
           role,

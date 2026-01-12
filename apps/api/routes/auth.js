@@ -1,4 +1,3 @@
-// apps/api/routes/auth.js
 const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
@@ -11,6 +10,13 @@ const EmployeeList = require("../models/EmployeeList");
 const { authMiddleware } = require("../middleware/auth");
 
 const router = express.Router();
+
+/**
+ * @swagger
+ * tags:
+ *   name: Auth
+ *   description: User authentication & profile APIs
+ */
 
 const JWT_SECRET = process.env.JWT_SECRET;
 const COOKIE_NAME = process.env.COOKIE_NAME || "rest_house_token";
@@ -32,6 +38,50 @@ const upload = multer({ storage });
 /* =======================
    EMPLOYEE / EX-EMPLOYEE REGISTER
 ======================= */
+/**
+ * @swagger
+ * /api/auth/register:
+ *   post:
+ *     summary: Register employee or ex-employee
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - employeeId
+ *               - fullName
+ *               - email
+ *               - password
+ *             properties:
+ *               employeeId:
+ *                 type: string
+ *                 example: EMP10234
+ *               fullName:
+ *                 type: string
+ *                 example: Sheikh Shoeb
+ *               email:
+ *                 type: string
+ *                 example: shoeb@example.com
+ *               phone:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *                 example: Password@123
+ *               role:
+ *                 type: string
+ *                 enum: [employee, ex-employee]
+ *               idCard:
+ *                 type: string
+ *                 format: binary
+ *     responses:
+ *       200:
+ *         description: Registration successful
+ *       400:
+ *         description: Validation error
+ */
 router.post(
   "/register",
   upload.single("idCard"),
@@ -53,10 +103,9 @@ router.post(
         email,
         phone,
         password,
-        role = "employee", // ✅ default employee
+        role = "employee",
       } = req.body;
 
-      // Validate employee ID against master list
       const emp = await EmployeeList.findOne({
         employeeId: employeeId.trim(),
       });
@@ -66,7 +115,6 @@ router.post(
           .json({ error: "Employee ID not found in authorized list" });
       }
 
-      // Check for existing user
       const existing = await User.findOne({
         $or: [
           { employeeId: employeeId.trim() },
@@ -76,7 +124,7 @@ router.post(
       if (existing) {
         return res.status(400).json({
           error:
-            "Account already exists with this Employee ID or Email. Please contact customer support.",
+            "Account already exists with this Employee ID or Email. Please contact support.",
         });
       }
 
@@ -88,10 +136,8 @@ router.post(
         email: email.trim().toLowerCase(),
         phone: phone?.trim(),
         passwordHash,
-
-        role, // ✅ employee | ex-employee
+        role,
         status: "approved",
-
         idCardPath: req.file ? `/uploads/${req.file.filename}` : undefined,
       });
 
@@ -107,6 +153,38 @@ router.post(
 /* =======================
    GUEST REGISTER
 ======================= */
+/**
+ * @swagger
+ * /api/auth/register-guest:
+ *   post:
+ *     summary: Register guest user
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - fullName
+ *               - email
+ *               - password
+ *             properties:
+ *               fullName:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *               phone:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *               idCard:
+ *                 type: string
+ *                 format: binary
+ *     responses:
+ *       200:
+ *         description: Guest registered (pending admin approval)
+ */
 router.post(
   "/register-guest",
   upload.single("idCard"),
@@ -138,10 +216,8 @@ router.post(
         email: email.trim().toLowerCase(),
         phone: phone?.trim(),
         passwordHash,
-
         role: "guest",
         status: "pending",
-
         idCardPath: req.file ? `/uploads/${req.file.filename}` : undefined,
       });
 
@@ -151,7 +227,7 @@ router.post(
       });
     } catch (err) {
       console.error("REGISTER GUEST ERROR:", err);
-      return res.status(500).json({ error: err.message || "Server error" });
+      return res.status(500).json({ error: "Server error" });
     }
   }
 );
@@ -159,6 +235,33 @@ router.post(
 /* =======================
    USER LOGIN
 ======================= */
+/**
+ * @swagger
+ * /api/auth/login:
+ *   post:
+ *     summary: Login user
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - password
+ *             properties:
+ *               employeeId:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Login successful (JWT token)
+ *       400:
+ *         description: Invalid credentials
+ */
 router.post("/login", async (req, res) => {
   try {
     const { employeeId, email, password } = req.body;
@@ -173,31 +276,23 @@ router.post("/login", async (req, res) => {
       : { email: email.trim().toLowerCase() };
 
     const user = await User.findOne(query);
-    if (!user) {
-      return res.status(400).json({ error: "User not found" });
-    }
+    if (!user) return res.status(400).json({ error: "User not found" });
 
     if (user.role === "guest" && user.status !== "approved") {
       return res.status(403).json({ error: "Guest account awaiting approval" });
     }
 
     const valid = await bcrypt.compare(password, user.passwordHash);
-    if (!valid) {
-      return res.status(400).json({ error: "Invalid credentials" });
-    }
+    if (!valid) return res.status(400).json({ error: "Invalid credentials" });
 
-    const payload = {
-      id: user._id,
-      role: user.role,
-      employeeId: user.employeeId || null,
-    };
-
-    const token = jwt.sign(payload, JWT_SECRET, { expiresIn: "7d" });
+    const token = jwt.sign({ id: user._id, role: user.role }, JWT_SECRET, {
+      expiresIn: "7d",
+    });
 
     res.cookie(COOKIE_NAME, token, {
       httpOnly: true,
-      secure: true, // REQUIRED for SameSite=None
-      sameSite: "None", // REQUIRED for cross-domain
+      secure: true,
+      sameSite: "None",
       maxAge: 7 * 24 * 60 * 60 * 1000,
       path: "/",
     });
@@ -212,6 +307,22 @@ router.post("/login", async (req, res) => {
 /* =======================
    CHECK EMPLOYEE ID
 ======================= */
+/**
+ * @swagger
+ * /api/auth/check-employee:
+ *   get:
+ *     summary: Check if employee ID exists
+ *     tags: [Auth]
+ *     parameters:
+ *       - in: query
+ *         name: employeeId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Employee ID exists or not
+ */
 router.get("/check-employee", async (req, res) => {
   try {
     const { employeeId } = req.query;
@@ -232,12 +343,24 @@ router.get("/check-employee", async (req, res) => {
 /* =======================
    CURRENT USER
 ======================= */
+/**
+ * @swagger
+ * /api/auth/me:
+ *   get:
+ *     summary: Get logged-in user profile
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: User profile
+ *       401:
+ *         description: Unauthorized
+ */
 router.get("/me", authMiddleware, async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select("-passwordHash");
-    if (!user) {
-      return res.status(404).json({ error: "User not found" });
-    }
+    if (!user) return res.status(404).json({ error: "User not found" });
     res.json({ user });
   } catch (err) {
     console.error("ME ERROR:", err);
@@ -248,6 +371,16 @@ router.get("/me", authMiddleware, async (req, res) => {
 /* =======================
    LOGOUT
 ======================= */
+/**
+ * @swagger
+ * /api/auth/logout:
+ *   post:
+ *     summary: Logout user
+ *     tags: [Auth]
+ *     responses:
+ *       200:
+ *         description: Logged out successfully
+ */
 router.post("/logout", (req, res) => {
   res.clearCookie(COOKIE_NAME, { path: "/" });
   res.json({ message: "Logged out" });

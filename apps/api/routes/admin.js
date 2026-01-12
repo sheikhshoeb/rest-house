@@ -4,6 +4,30 @@ const { authMiddleware, requireRole } = require("../middleware/auth");
 
 const router = express.Router();
 
+/**
+ * @swagger
+ * tags:
+ *   name: Admin Users
+ *   description: Admin user management APIs
+ */
+
+/* =======================
+   PENDING GUESTS
+======================= */
+/**
+ * @swagger
+ * /api/admin/pending-guests:
+ *   get:
+ *     summary: Get all pending guest users
+ *     tags: [Admin Users]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of pending guests
+ *       401:
+ *         description: Unauthorized
+ */
 router.get(
   "/pending-guests",
   authMiddleware,
@@ -22,6 +46,29 @@ router.get(
   }
 );
 
+/* =======================
+   APPROVE GUEST
+======================= */
+/**
+ * @swagger
+ * /api/admin/guest/{id}/approve:
+ *   post:
+ *     summary: Approve a guest user
+ *     tags: [Admin Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Guest approved
+ *       404:
+ *         description: User not found
+ */
 router.post(
   "/guest/:id/approve",
   authMiddleware,
@@ -44,6 +91,29 @@ router.post(
   }
 );
 
+/* =======================
+   REJECT GUEST
+======================= */
+/**
+ * @swagger
+ * /api/admin/guest/{id}/reject:
+ *   post:
+ *     summary: Reject a guest user
+ *     tags: [Admin Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Guest rejected
+ *       404:
+ *         description: User not found
+ */
 router.post(
   "/guest/:id/reject",
   authMiddleware,
@@ -66,15 +136,44 @@ router.post(
   }
 );
 
-// GET /api/admin/users
+/* =======================
+   LIST USERS (PAGINATED)
+======================= */
+/**
+ * @swagger
+ * /api/admin/users:
+ *   get:
+ *     summary: Get users with pagination, search and filters
+ *     tags: [Admin Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: number
+ *         example: 1
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: number
+ *         example: 10
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: filter
+ *         schema:
+ *           type: string
+ *           enum: [PENDING, EMPLOYEE, GUEST, REJECTED, ALL]
+ *     responses:
+ *       200:
+ *         description: Users list with pagination and stats
+ */
 router.get("/users", authMiddleware, requireRole("admin"), async (req, res) => {
   try {
-    const {
-      page = 1,
-      limit = 10,
-      search = "",
-      filter = "ALL", // PENDING | EMPLOYEE | GUEST | REJECTED | ALL
-    } = req.query;
+    const { page = 1, limit = 10, search = "", filter = "ALL" } = req.query;
 
     const q = {};
     if (search) {
@@ -85,7 +184,6 @@ router.get("/users", authMiddleware, requireRole("admin"), async (req, res) => {
       ];
     }
 
-    // FILTER LOGIC
     if (filter === "PENDING") q.status = "pending";
     if (filter === "REJECTED") q.status = "rejected";
     if (filter === "EMPLOYEE") q.role = "employee";
@@ -105,7 +203,6 @@ router.get("/users", authMiddleware, requireRole("admin"), async (req, res) => {
       User.countDocuments(q),
     ]);
 
-    // COUNTS FOR TILES
     const [pending, rejected, employees, guests, all] = await Promise.all([
       User.countDocuments({ status: "pending" }),
       User.countDocuments({ status: "rejected" }),
@@ -136,7 +233,29 @@ router.get("/users", authMiddleware, requireRole("admin"), async (req, res) => {
   }
 });
 
-// DELETE /api/admin/users/:id
+/* =======================
+   DELETE USER
+======================= */
+/**
+ * @swagger
+ * /api/admin/users/{id}:
+ *   delete:
+ *     summary: Delete a user by ID
+ *     tags: [Admin Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: User deleted successfully
+ *       404:
+ *         description: User not found
+ */
 router.delete(
   "/users/:id",
   authMiddleware,

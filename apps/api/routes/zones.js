@@ -4,8 +4,34 @@ const Zone = require("../models/Zone");
 const router = express.Router();
 
 /**
- * GET /api/zones
- * Alphabetical list of zones
+ * @swagger
+ * tags:
+ *   name: Zones
+ *   description: Zone listing APIs
+ */
+
+/**
+ * @swagger
+ * /api/zones:
+ *   get:
+ *     summary: Get list of zones
+ *     description: Fetches an alphabetical list of all zone names
+ *     tags: [Zones]
+ *     responses:
+ *       200:
+ *         description: List of zone names
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: string
+ *               example:
+ *                 - Delhi
+ *                 - Mumbai
+ *                 - Chennai
+ *       500:
+ *         description: Failed to fetch zones
  */
 router.get("/", async (req, res) => {
   try {
